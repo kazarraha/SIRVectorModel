@@ -13,7 +13,10 @@ public class Simulator {
 	public double mutantRecovered;
 	public double vectorSusceptible;
 	public double vectorInfected;
-	public static final double[] defaultStart = {12900,100,0,1500,0,0,14000,0};
+	//public static final double[] defaultStart = {12900,100,0,1500,0,0,14000,0};
+	
+	public static final double[] defaultStart = {13000,0,0,1300,200,0,14000,0};
+	
 	//public static final double[] defaultStart = {0.8666, 0.0006666, 0, 0.13333334,0,0,1,0};
 	
 	public double wildTransmissionRate;
@@ -44,7 +47,7 @@ public class Simulator {
 	
 	
 	//public static final double[] defaultParameters = {0.008, 0, 0.001, 0.0025, 0.00164, 0.000274, 0.005, 0.003, 0.001, 0.001, 0.0015, 0.0012, 0.01, 0.02, 15000,1,1,1};	
-	public static final double[] defaultParameters = {0.008, 0, 0.001, 0.0025, 0.002, 0.0003, 0.005, 0.003, 0.001, 0.001, 0.0018, 0.0014, 0.01, 0.02, 15000,1,1,1};	
+	public static final double[] defaultParameters = {0.008, 0, 0.001, 0.0025, 0.002, 0.0003, 0.005, 0.003, 0.001, 0.0011, 0.0018, 0.0014, 0.01, 0.02, 15000,1,1,1};	
 	
 	
 	
@@ -524,6 +527,11 @@ public class Simulator {
 	}
 	
 	public double predictW() {
+		double w0 = defaultStart[4]/carryingCapacity;
+		return predictW(w0);
+	}
+	
+	public double predictW(double w0) {
 		//almost the same as computeFormulaRV, but returns predictedW
 		double Iv = nastyQuadraticTest(0);
 		Iv = nastyQuadraticTest(Iv);	double Sv = 1 - Iv;
@@ -531,13 +539,39 @@ public class Simulator {
 		double Imc = mutantTransmissionRate*biteRateMutant*vectorMultiplier/(mutantInfectedDeath+mutantRecoveryRate);
 		double Iwf = (Iv*Iwc)/(1+Iwc * Iv);	double Swf = 1 - Iwf;
 		double Imf = (Iv*Imc)/(1+Imc * Iv);	double Smf = 1 - Imf;
-
-		if(computeRM() < 1 && computeRW() < 1) return 1; //no infection, wild dominates
 		
-		double predictedW = (1-computeRM()*Smf)/(Sv * (computeRW()*Swf-computeRM()*Smf));
+
+		double RMeff = computeRM()*Smf;
+		double RWeff = computeRW()*Swf;
+		
+		
+
+		
+		
+		double wEq = (1-RMeff)/(Sv * (RWeff-RMeff));
 		//System.out.println("predictedW: " + predictedW + " actualW " + getTotalWild()/getTotalPop());
 		
+		
+		double predictedW;
+		if(RMeff < 1 && RWeff < 1) predictedW = 1; //no infection, wild dominates
+		else if(RWeff < 1 && RMeff > 1) {
+			if(w0 > wEq) predictedW = 1;
+			else predictedW = 0;
+		}
+		else if(RWeff > 1 && RMeff > 1) predictedW = 0;
+		else predictedW = wEq;
+		
 		//System.out.println("predictedW: " + predictedW);
+		if(predictedW < 0) predictedW = 0;
+		if(predictedW > 1) predictedW = 1;
+		
+		//
+		if(vectorMultiplier == 1) {
+			System.out.println("vd1: RW: " + computeRW() + "  RWeff " + RWeff);
+			System.out.println("vd1: RM: " + computeRM() + "  RMeff " + RMeff);
+			System.out.println("wEq: " + wEq + "  w0: " + w0 + "  wPred: " + predictedW);
+		}
+		//
 		return predictedW;		
 	}
 	
@@ -554,11 +588,16 @@ public class Simulator {
 		Iw = Iw/(1+Iw * estimatedIV);
 		Im = Im/(1+Im * estimatedIV);
 		double muw = wildInfectedDeath-wildUninfectedDeath;
+		double mum = mutantInfectedDeath-mutantUninfectedDeath;
 		double alpw = wildInfectedBirth - wildUninfectedBirth;
 		double alpm = mutantInfectedBirth - mutantUninfectedBirth;
-		double a = Iw*Im*muw*alpm;
-		double b = Iw*muw*mutantUninfectedBirth - Iw * alpw * mutantUninfectedDeath + Im * alpm * wildUninfectedDeath;
+		//double a = Iw*Im*muw*alpm;  //old version with approximation that mum = 0
+		double a = Iw*Im*(muw*alpm-alpw*mum);
+		//double b = Iw*muw*mutantUninfectedBirth - Iw * alpw * mutantUninfectedDeath + Im * alpm * wildUninfectedDeath;
+		double b = Iw*muw*mutantUninfectedBirth - Iw*alpw*mutantUninfectedDeath + Im*alpm*wildUninfectedDeath-Im*mum*wildUninfectedBirth;
 		double c = wildUninfectedDeath * mutantUninfectedBirth - wildUninfectedBirth * mutantUninfectedDeath;
+		
+
 		
 		double quadraticCenter = -b / (2*a);
 		double radicand = b*b-4*a*c;
@@ -569,6 +608,14 @@ public class Simulator {
 			double right = quadraticCenter + side;
 			//System.out.println("left: " + left + "  right: " + right);
 		//}
+			
+			//
+			//System.out.println("a: " + a);
+			//System.out.println("b: " + b);
+			//System.out.println("c: " + c);
+			//System.out.println("quad: " + quadraticCenter + " +/- " + side);
+			
+			//
 		
 		
 		//System.out.println("actual infected vector freq: " + vectorInfected/getTotalVector());	
@@ -583,12 +630,12 @@ public class Simulator {
 		double RW = computeRW();
 		double RM = computeRM();
 		int region;
-		if(RW <= 1) region = 1; //no infection, only wilds
+		if(RW <= 1 && RM <= 1) region = 1; //no infection, only wilds
 		else if (w == 1) region = 2; //some infection, but no mutants
 		else if (w > 0) region = 3; //some infection, balanced by wild/mutant
 		else region = 4; //much infection, wilds are extinct
 		
-		//System.out.println("region: " + region);
+		//System.out.println("predictExtinction region: " + region);
 		
 		switch(region) {
 		case 1:

@@ -3,6 +3,7 @@ package SIRVectorModel;
 import java.awt.Color;
 import java.util.ArrayList;
 
+
 public class ActionManager {
 //contains useful static methods that run sequences of commands to make nice diagrams and test hypotheses and stuff
 	
@@ -596,7 +597,7 @@ public class ActionManager {
 	public static void graphOutcomeScatter() {
 		//makes scatterplot of wild/mutant population outcomes with small parameter changes
 		double[] defaultParameters = Simulator.defaultParameters;
-		int numGens = 200;
+		int numGens = 800;
 		int numCopies = 101;
 		int totalDays = 365*numGens;
 		//
@@ -605,6 +606,12 @@ public class ActionManager {
 		double[] totalMutant = new double[numCopies];
 		double[] totalWild = new double[numCopies];
 		double[] totalInfected = new double[numCopies];
+		
+		double[] infM = new double[numCopies]; //% of mutants who are infected
+		double[] infW = new double[numCopies]; //wilds
+		double[] infH = new double[numCopies]; //all hosts
+		double[] infV = new double[numCopies]; //vectors
+		
 
 		for(int c = 0; c < numCopies; c++) {
 		
@@ -619,6 +626,13 @@ public class ActionManager {
 		totalMutant[c] = sim.getTotalMutant();
 		totalWild[c] = sim.getTotalWild();
 		totalInfected[c] = sim.getTotalInfected();
+		
+		infM[c] = sim.mutantInfected/sim.getTotalMutant();
+		infW[c] = sim.wildInfected/sim.getTotalWild();
+		infV[c] = sim.vectorInfected/sim.getTotalVector();
+		infH[c] = (sim.mutantInfected+sim.wildInfected)/sim.getTotalPop();
+		
+		
 		
 		//sim.computeFormulaRV();
 		//
@@ -635,6 +649,25 @@ public class ActionManager {
 		double[] markY = {0,5000,10000, 15000};
 		graphOutcome.setMarks(markX, markY);
 		
+		
+		double[] markX2 = {0,0.5,1, 1.5, 2.0};
+		
+		double[] markY2 = {0, 0.025,0.05,0.075,0.1};
+		
+		double[][] multiInf = new double[4][numCopies];
+		multiX = new double[4][numCopies];
+		for(int i = 0; i < multiX.length; i++) multiX[i] = linear;
+		multiInf[0] = infH;
+		multiInf[1] = infW;
+		multiInf[2] = infM;
+		multiInf[3] = infV;
+		
+		ScatterPlotHandler wildInfScatter = new ScatterPlotHandler(multiX, multiInf, "inf as function of infectivity for w/m/h/v " + numGens + " gens");
+		wildInfScatter.setMarks(markX2, markY2);
+		String[] shapes = {"circle", "square", "diamond", "triangle"};
+		wildInfScatter.setShapes(shapes);
+		
+
 		
 	}
 	
@@ -740,10 +773,14 @@ public class ActionManager {
 	}
 	
 	public static void manageFormulaV(double[][][] v, int y, int x, Simulator sim) {
+		//assumes initial w is based on default values
+		double w0 = sim.defaultStart[4]/sim.carryingCapacity;
+		manageFormulaV(v,y,x,sim,w0);
+	}
+	
+	public static void manageFormulaV(double[][][] v, int y, int x, Simulator sim, double w0){
 		//measures the formula predictions for wild/mutant/host based on the sim parameters
-		double w = sim.predictW();
-		if(w < 0) w = 0;
-		if(w > 1) w = 1;
+		double w = sim.predictW(w0);
 		double m = 1 - w;
 		if(!sim.predictExtinction(w)) {
 			v[y][x][0] = 15000*m;
@@ -754,9 +791,9 @@ public class ActionManager {
 			v[y][x][2] = 0;
 		}
 		
-		
-		
 	}
+	
+	
 	
 	public static void simplifiedFormulaV(double[][][] v, int y, int x, Simulator sim) {
 		//measures the formula predictions for wild/mutant/host based on the sim parameters
@@ -857,12 +894,12 @@ public class ActionManager {
 		//double[] defaultParameters = Simulator.defaultParameters;
 		double bothThriveMin = 0;
 		double bothThriveMax = 1;
-		int numY = 40;
+		int numY = 160;
 		double bothThriveInc = (bothThriveMax-bothThriveMin)/numY;
 							
 		double infectivityMin = 0;
 		double infectivityMax = 2;
-		int numX = 40;
+		int numX = 160;
 		double infectivityInc = (infectivityMax-infectivityMin)/numX;
 		double[] parameters = defaultParameters;
 		//TEMP
@@ -917,8 +954,8 @@ public class ActionManager {
 				v[y][x][2] = sim.getTotalWild(); //Blue
 				v[y][x][1] = sim.getTotalInfected(); //Green
 								
-				//manageFormulaV(formulaV, y, x, sim); //predicts the red/blue values based on formula
-				simplifiedFormulaV(formulaV, y, x, sim);
+				manageFormulaV(formulaV, y, x, sim); //predicts the red/blue values based on formula
+				//simplifiedFormulaV(formulaV, y, x, sim);
 								
 				//vInf[y][x] = 3*sim.getTotalInfected()*sim.carryingCapacity/sim.getTotalPop(); //normalized infected
 				vInf[y][x] = sim.getTotalInfected()/15000; //raw
@@ -960,16 +997,16 @@ public class ActionManager {
 		//
 		//Color[] custom = {Color.red, Color.green, Color.blue};
 		//square.setCustomColors(v, 15000, custom);
-		VarySquare infSquare = new VarySquare(vInf, "infected");
-		Color[] custom = {Color.green};
-		double[][][] vInfHack = new double[vInf.length][vInf[0].length][1];
-		for(int i = 0; i < vInf.length; i++) for(int j = 0; j < vInf[i].length; j++) vInfHack[i][j][0] = vInf[i][j];
-		infSquare.setCustomColors(vInfHack,  0.05, custom);
+		//VarySquare infSquare = new VarySquare(vInf, "infected");
+		//Color[] custom = {Color.green};
+		//double[][][] vInfHack = new double[vInf.length][vInf[0].length][1];
+		//for(int i = 0; i < vInf.length; i++) for(int j = 0; j < vInf[i].length; j++) vInfHack[i][j][0] = vInf[i][j];
+		//infSquare.setCustomColors(vInfHack,  0.05, custom);
 		//
 		VarySquare formulaSquare = new VarySquare(formulaV, "bothThrive vs Infectivity as predicted by formula");
 		//VarySquare formulaSquare = new VarySquare(formulaV, "bothThrive vs Infectivity as predicted by simplified formula");
 
-		boolean realismLine = true; //tests which parameters allow uninfectedpopulations to survive
+		boolean realismLine = false; //tests which parameters allow uninfectedpopulations to survive
 		//only graphs properly if minThrive = 0
 		if(realismLine) {
 			Simulator sim = new Simulator(Simulator.defaultStart, parameters);
@@ -985,10 +1022,10 @@ public class ActionManager {
 		}
 	
 		//restricted to subtype, mostly for troubleshooting purposes
-		VarySquare infWSquare = new VarySquare(vInfW, "infected restricted to wild");
-		infWSquare.setCustomColors(vInfW, 0.05, custom);
-		VarySquare infMSquare = new VarySquare(vInfM, "infected restricted to mutant");
-		infMSquare.setCustomColors(vInfM, 0.05, custom);
+		//VarySquare infWSquare = new VarySquare(vInfW, "infected restricted to wild");
+		//infWSquare.setCustomColors(vInfW, 0.05, custom);
+		//VarySquare infMSquare = new VarySquare(vInfM, "infected restricted to mutant");
+		//infMSquare.setCustomColors(vInfM, 0.05, custom);
 	
 	
 	}		
@@ -997,19 +1034,21 @@ public class ActionManager {
 	
 	
 	public static void mutantInfectivityVsmutantInitial(MainGUI gui, int numGens) {
-		//plots outcomes as mutantInfectivity and number of initial mutants scales, to investigate phase transition
+		//plots outcomes as vector density and number of initial mutants scales, to investigate phase transition
 		double[] defaultParameters = {0.008, 0, 0.001, 0.0025, 0.002, 0.0003, 0.005, 0.003, 0.001, 0.001, 0.0018, 0.0014, 0.01, 0.02, 15000,1,1,1};	
 		//double[] defaultParameters = Simulator.defaultParameters;
 		defaultParameters[0] = defaultParameters[0]/2; //cut wildTransmissionRate in half to make Rw < 1
 									
 		double mInfectivityMin = 0;
-		double mInfectivityMax = 20;
+		double mInfectivityMax = 2;
 		int numY = 80;
+		//int numY = 40;
 		double mInfectivityInc = (mInfectivityMax-mInfectivityMin)/numY;
 		
 		double mutantInitialMin = 0;
 		double mutantInitialMax = 14000;
 		int numX = 70;
+		//int numX = 35;
 		double mutantInitialInc = (mutantInitialMax-mutantInitialMin)/numX;
 							
 					
@@ -1022,14 +1061,23 @@ public class ActionManager {
 			double mInfectivity = mInfectivityMin+mInfectivityInc*y;
 			for(int x = 0; x < numX; x++) {
 				double mutantInitial = mutantInitialMin+mutantInitialInc*x;
+				double w0 = 1 - ((double)mutantInitial)/15000;
+				
 				double[] parameters = defaultParameters;
 				Simulator sim = new Simulator(Simulator.defaultStart, parameters);
 				
-				sim.wildInfected = 100;
+				sim.mutantInfected = 200;
 				
-				sim.mutantTransmissionRate = mInfectivity*sim.mutantTransmissionRate;
-				sim.mutantSusceptible = mutantInitial;
-				sim.wildSusceptible = 14200 - mutantInitial - 100;
+				//sim.mutantTransmissionRate = mInfectivity*sim.mutantTransmissionRate*3;
+				//sim.wildTransmissionRate = mInfectivity*sim.wildTransmissionRate;
+				sim.mutantTransmissionRate *= 3;
+				
+				adjustParameters(sim, "infectivity", mInfectivity);
+				
+				
+				sim.mutantSusceptible = mutantInitial - 200;
+				if(sim.mutantSusceptible < 0) sim.mutantSusceptible = 0;
+				sim.wildSusceptible = 14500 - mutantInitial;
 								
 				for(int i = 0; i < 365*numGens; i++) sim.simDay();
 				
@@ -1038,8 +1086,10 @@ public class ActionManager {
 				v[y][x][2] = sim.getTotalWild(); //Blue
 				v[y][x][1] = sim.getTotalInfected(); //Green
 								
-				manageFormulaV(formulaV, y, x, sim); //predicts the red/blue values based on formula
+				manageFormulaV(formulaV, y, x, sim, w0); //predicts the red/blue values based on formula
 				//simplifiedFormulaV(formulaV, y, x, sim);
+				
+
 								
 				vInf[y][x] = 3*sim.getTotalInfected()*sim.carryingCapacity/sim.getTotalPop(); //normalized infected
 				vInfVec[y][x] = 3*sim.vectorInfected;
@@ -1173,6 +1223,105 @@ public class ActionManager {
 		
 	}
 	
+	
+	
+	public static void RwildVsRmut(MainGUI gui, int numGens) {
+		//plots outcomes as wildTransmission and mutantTransmission vary
+		//double[] defaultParameters = {0.008, 0, 0.001, 0.0025, 0.002, 0.0003, 0.005, 0.003, 0.001, 0.001, 0.0018, 0.0014, 0.01, 0.02, 15000,1,1,1};	
+		double[] defaultParameters = Simulator.defaultParameters;
+		double wTranMin = 0;
+		double wTranMax = 4;
+		int numY = 40;
+		double wTranInc = (wTranMax-wTranMin)/numY;
+							
+		double mTranMin = 0;
+		double mTranMax = 4;
+		int numX = 40;
+		double mTranInc = (mTranMax-mTranMin)/numX;
+		double[] parameters = defaultParameters;
+					
+		double[][][] v = new double[numY][numX][3];
+		double[][][] formulaV = new double[numY][numX][3];
+		double[][] vInf = new double[numY][numX];
+		double[][] vInfVec = new double[numY][numX];
+		//
+		double[][][] vInfW = new double[numY][numX][1];
+		double[][][] vInfM = new double[numY][numX][1];	
+		//
+		//double[][] linePoints = new double[2][2];
+		for(int y = 0; y < numY; y++) {
+			double wTran = wTranMin+wTranInc*y;
+			for(int x = 0; x < numX; x++) {
+				double mTran = mTranMin+mTranInc*x;
+				Simulator sim = new Simulator(Simulator.defaultStart, parameters);
+				
+
+				
+				sim.wildTransmissionRate *= wTran;
+				sim.mutantTransmissionRate *= mTran;
+
+
+								
+				for(int i = 0; i < 365*numGens; i++) sim.simDay();
+				
+								
+				v[y][x][0] = sim.getTotalMutant(); //Red
+				v[y][x][2] = sim.getTotalWild(); //Blue
+				//v[y][x][1] = sim.getTotalInfected(); //Green
+								
+				manageFormulaV(formulaV, y, x, sim); //predicts the red/blue values based on formula
+								
+				
+				vInf[y][x] = sim.getTotalInfected()/15000; //raw
+				vInfVec[y][x] = 3*sim.vectorInfected;
+				vInfW[y][x][0] = sim.wildInfected/sim.getTotalWild();
+				vInfM[y][x][0] = sim.mutantInfected/sim.getTotalMutant();
+
+				if(x == 30 && y == 30) {
+					gui.sim = sim;
+					gui.repaint();
+				}
+
+				boolean birthDeathReport = false;
+				if(birthDeathReport) {
+				double curMu = sim.getTotalMutant();
+				for(int i = 0; i < 364; i++) sim.simDay();
+				double muDeath = (curMu - sim.getTotalMutant())/curMu;
+
+
+				//test birthRate
+				//double mUn = (sim.mutantSusceptible + sim.mutantRecovered)/sim.getTotalMutant();
+				//double avMBirth = mUn*sim.mutantUninfectedBirth+(1-mUn)*sim.mutantInfectedBirth;
+				//double muBirth = (1-muDeath) * 365*avMBirth;
+				//System.out.println("ActionManager.thriveVsInfectivity actual muBirth: " + muBirth);
+				}
+				
+			}
+		}	
+		
+		
+		
+		VarySquare square = new VarySquare(v, "wTransmission (y) vs mTransmission (x)");
+		
+		//Color[] custom = {Color.white, Color.white, Color.blue};
+		//square.setCustomColors(v, 15000, custom);
+		
+		//
+		//Color[] custom = {Color.red, Color.green, Color.blue};
+		//square.setCustomColors(v, 15000, custom);
+		//VarySquare infSquare = new VarySquare(vInf, "infected");
+		//Color[] custom = {Color.green};
+		//double[][][] vInfHack = new double[vInf.length][vInf[0].length][1];
+		//for(int i = 0; i < vInf.length; i++) for(int j = 0; j < vInf[i].length; j++) vInfHack[i][j][0] = vInf[i][j];
+		//infSquare.setCustomColors(vInfHack,  0.05, custom);
+		//
+		VarySquare formulaSquare = new VarySquare(formulaV, "wTransmission vs mTransmission as predicted by formula");
+		//VarySquare formulaSquare = new VarySquare(formulaV, "bothThrive vs Infectivity as predicted by simplified formula");
+
+
+	
+	
+	}		
 	
 	
 	

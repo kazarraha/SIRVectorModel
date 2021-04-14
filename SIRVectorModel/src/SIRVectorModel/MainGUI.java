@@ -150,9 +150,10 @@ public static void main(String[] args){  //main
 		  public void actionPerformed(ActionEvent e)
 		  {
 			
-			boolean squareStuff = false;
+			boolean squareStuff = true;
 			boolean parameterStuff = false;
-			boolean graphStuff = true;
+			boolean graphStuff = false;
+			boolean figureArchive = false;
 			
 			if(squareStuff) {
 				//VarySquare.testSquare();
@@ -163,10 +164,12 @@ public static void main(String[] args){  //main
 				//ActionManager.findSlopesAsGensVary(myself);
 				//ActionManager.mutationStrengthVsMutantBiteOverlay();
 				//ActionManager.survivabilityScan(myself, 80);
-				ActionManager.thriveVsInfectivity(myself, 120);
-				//ActionManager.mutantInfectivityVsmutantInitial(myself, 160);
+				//ActionManager.thriveVsInfectivity(myself, 80);           		 //main varySquare
+				//ActionManager.mutantInfectivityVsmutantInitial(myself, 80);	//initial condition
 				//VarySquare.keySquare();
 				//ActionManager.wildbiteVsWilddeath(myself, 640);
+				
+				 ActionManager.RwildVsRmut(myself, 1000);
 			}
 			  
 			if(parameterStuff) {
@@ -177,10 +180,14 @@ public static void main(String[] args){  //main
 			}
 			if(graphStuff) {
 				//ActionManager.graphInfectionOverTime();
-				ActionManager.graphInfectionOverTimeMulti();
+				//ActionManager.graphInfectionOverTimeMulti();
 				//ActionManager.r0Estimator();
-				//ActionManager.graphOutcomeScatter();
+				ActionManager.graphOutcomeScatter();
 				//ActionManager.simpleVectorSIR();
+			}
+			if(figureArchive) {
+				FigureArchive.bioFigure5();
+				//FigureArchive.bioFigure5();
 			}
 			
 			  

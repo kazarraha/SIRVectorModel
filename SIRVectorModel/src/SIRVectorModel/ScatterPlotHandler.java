@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Polygon;
 import java.text.DecimalFormat;
 
 import javax.swing.JFrame;
@@ -25,6 +26,10 @@ public class ScatterPlotHandler extends JPanel {
 	public String[] pointLabels;
 	public Color[] pointLabelColors;
 	
+	
+	
+	public Color[] manyColors;
+	public String[] scatterShapes;
 	
 	public double[] specialXTics;
 	public String[] specialXTicLabels;
@@ -63,7 +68,7 @@ public class ScatterPlotHandler extends JPanel {
 	
 	public ScatterPlotHandler(double[] xP, double[] yP, String lab){
 
-		window = new JFrame("sub window");
+		window = new JFrame(lab);
         window.add(this);
         window.setSize(1400, 1000);
         window.setVisible(true);
@@ -92,6 +97,14 @@ public class ScatterPlotHandler extends JPanel {
 		pointLabels = pL;
 		pointLabelColors = pLC;
 		repaint();
+	}
+	
+	public void setColors(Color[] mc) {
+		manyColors = mc;
+	}
+	
+	public void setShapes(String[] shapes) {
+		scatterShapes = shapes;
 	}
 	
 	
@@ -273,7 +286,7 @@ public class ScatterPlotHandler extends JPanel {
 		ypMany = yP;
 		label = lab;
 		
-		window = new JFrame("sub window");
+		window = new JFrame(lab);
         window.add(this);
         window.setSize(1400, 1000);
         window.setVisible(true);
@@ -288,28 +301,40 @@ public class ScatterPlotHandler extends JPanel {
 		g2d.setColor(Color.white);
 		g2d.fillRect(0, 0, 2000, 1500);
 		//Color[] manyColors = {Color.black, Color.green, Color.blue};
-		Color[] manyColors = {Color.red, Color.blue};
+		if(manyColors == null) {
+			if(ypMany.length > 2) { 
+				Color[] newColors = {Color.magenta, Color.blue, Color.red, Color.green};
+				manyColors = newColors;
+			}
+			else {
+				Color[] newColors = {Color.red, Color.blue};
+				manyColors = newColors;	
+			}
+		}
+
 		
 		System.out.println("xpManylength: " + xpMany.length);
 		
 		for(int i = 0; i < xpMany.length; i++) {
-			if(i == 0) paintOne(g2d, xpMany[i], ypMany[i], manyColors[i], true); // with axes
-			else paintOne(g2d, xpMany[i], ypMany[i], manyColors[i], false);
+			String shape;
+			if(scatterShapes != null && scatterShapes.length > i) shape = scatterShapes[i];
+			else shape = "circle";
+			if(i == 0) paintOne(g2d, xpMany[i], ypMany[i], manyColors[i], shape, true); // with axes
+			else paintOne(g2d, xpMany[i], ypMany[i], manyColors[i], shape, false);
 			
 		}
 		
 	}
-	public void paintOne(Graphics2D g2d, double[] xp, double[] yp, Color dotColor) {
-		paintOne(g2d, xp, yp, dotColor, true);
+	public void paintOne(Graphics2D g2d, double[] xp, double[] yp, Color dotColor, String shape) {
+		paintOne(g2d, xp, yp, dotColor, shape, true);
 	}
-	public void paintOne(Graphics2D g2d, double[] xp, double[] yp, Color dotColor, boolean axes) {
+	public void paintOne(Graphics2D g2d, double[] xp, double[] yp, Color dotColor, String shape,  boolean axes) {
 		//identical to paint except with dotColor different
 		int top = 100;
 		 int left = 100;
 		 int height = 800;
 		 int length = 1200;
 
-		 System.out.println("reach check 1");
 
 		 
 		 //find bounds (assume, for now, that mins are both 0_
@@ -340,7 +365,6 @@ public class ScatterPlotHandler extends JPanel {
 		 //if(zoom) yInc = 400;
 		 double xInc = (double)length / (xMax-xMin);
 		 
-		 System.out.println("reach check 2");
 	
 		 g2d.setColor(Color.black);
 		 DecimalFormat df = new DecimalFormat("#.000");
@@ -386,7 +410,10 @@ public class ScatterPlotHandler extends JPanel {
 			 int xCenter = left + (int)(xInc * (xp[i]-xMin));
 			 int yCenter = top + height - (int)(yInc * (yp[i]-yMin));
 			 g2d.setColor(dotColor);
-			 g2d.fillOval(xCenter - dotRadius, yCenter - dotRadius, 2*dotRadius+1, 2*dotRadius+1);
+			 
+			 //actual dot
+			 paintShape(g2d, dotColor, shape, xCenter, yCenter, dotRadius);
+			 //  g2d.fillOval(xCenter - dotRadius, yCenter - dotRadius, 2*dotRadius+1, 2*dotRadius+1);
 			 
 			 if(pointLabels != null){
 				 g2d.setColor(pointLabelColors[i]);
@@ -437,6 +464,58 @@ public class ScatterPlotHandler extends JPanel {
 		 }
 		 }
 		
+	}
+	
+	
+	
+	public static void paintShape(Graphics2D g2d, Color color, String shape, int x, int y, int rad) {
+		//paints a dot on a scatterpoint of the specified color and shape
+		g2d.setColor(color);
+		int dim = 2*rad+1;
+		switch(shape) {
+		case "square":
+			g2d.fillRect(x-rad, y-rad, dim, dim);
+			break;
+		case "circle":
+			g2d.fillOval(x-rad, y-rad, dim, dim);
+			break;
+		case "triangle":
+			fillTriangle(g2d, x, y, rad);
+			break;
+		case "diamond":
+			fillDiamond(g2d,x,y,rad);
+			break;
+		default: 	
+			System.out.println("ScatterPlotHandler.paintShape given invalid String: " + shape);
+			g2d.fillOval(x-rad, y-rad, dim, dim);
+			break;
+		
+		}
+			
+	}
+	
+	public static void fillTriangle(Graphics2D g2d, int x, int y, int rad) {
+		// draws a triangle with center approximately (x,y) and "radius" rad
+		int[] xCor = new int[3];
+		int[] yCor = new int[3];
+		xCor[0]=x-rad; xCor[1]=x; xCor[2]=x+rad;
+		yCor[0]=y+rad; yCor[1]=y-rad; yCor[2]=yCor[0]; 
+		int n = 3;
+
+		Polygon p = new Polygon(xCor, yCor, n); 
+		g2d.fillPolygon(p);  
+	}
+	
+	public static void fillDiamond(Graphics2D g2d, int x, int y, int rad) {
+		// draws a diamond with center (x,y) and radius rad
+		int[] xCor = new int[4];
+		int[] yCor = new int[4];
+		xCor[0]=x-rad; xCor[1]=x; xCor[2]=x+rad; xCor[3] = xCor[1];
+		yCor[0]=y; yCor[1]=y-rad; yCor[2]=yCor[0]; yCor[3] = y+rad;
+		int n = 4;
+
+		Polygon p = new Polygon(xCor, yCor, n);  // This polygon represents a diamond with the above vertices
+		g2d.fillPolygon(p);  
 	}
 	
 	
