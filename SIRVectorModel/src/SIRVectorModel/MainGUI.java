@@ -8,10 +8,9 @@ It is not intended for or designed for general use, but if you want to copy and 
 for your own research, you may do so with proper credit/citation.
 
 This simulates an SIR model for a vector-driven disease in a population with two host types.
-Wild hosts are vulnerable to the disease, but breed faster in its absence.
-Mutant hosts are more resistant to the disease, at the cost of their breeding rate.
-Two papers are currently in progress using this model, the first of which is intended
-for submission to Proceedings of the Royal Society B
+Wild hosts (type 1) are vulnerable to the disease, but breed faster in its absence.
+Mutant hosts (type 2) are more resistant/tolerant to the disease, at the cost of their breeding rate.
+Two papers are currently in progress using this model
 
 
 Comments are sparse, which I know is a bad habit but was easier in the moment.
@@ -25,7 +24,9 @@ The other classes do useful generic stuff like converting data into figures.
 Almost all of the variables and methods are hard-coded, rather than having input fields when the code is run.
 The set of events I want to occur are written step-by-step into an ActionManager method, then that method is
 stuck into the ActionButton in MainGUI, and the old methods are commented out, so when the program is executed
-pressing the Action Button will do the useful thing.
+pressing the Action Button will do the useful thing.  If you wish to run things yourself, find the relevant section
+(search for "actionpaction"), set the corresponding boolean variable to TRUE and all others to FALSE
+and then run the program and press the action button
 
 
 
@@ -150,10 +151,10 @@ public static void main(String[] args){  //main
 		  public void actionPerformed(ActionEvent e)
 		  {
 			
-			boolean squareStuff = true;
+			boolean squareStuff = false;
 			boolean parameterStuff = false;
 			boolean graphStuff = false;
-			boolean figureArchive = false;
+			boolean figureArchive = true;
 			
 			if(squareStuff) {
 				//VarySquare.testSquare();
