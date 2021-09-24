@@ -17,6 +17,7 @@ public class FigureArchive {
 	
 	
 	
+	//figures for Vectorborne Diseases and ÅgWingman PathogensÅh: how infection alters invasion success
 	
 	public static void bioFigure1() {
 		//tracks the total population and number of infected over time
@@ -115,7 +116,7 @@ public class FigureArchive {
 	
 	
 	
-	public static void bioFigure3() {
+	public static void bioFigure34() {
 		//makes scatterplot of wild/mutant population outcomes with small parameter changes  (Figure 3)
 		//method creates both figure 3 and 4, since they display different data from the same simulations
 		double[] defaultParameters = {0.008, 0, 0.001, 0.0025, 0.002, 0.0003, 0.005, 0.003, 0.001, 0.0011, 0.0018, 0.0014, 0.01, 0.02, 15000,1,1,1};	
@@ -181,14 +182,10 @@ public class FigureArchive {
 
 	}
 
-	public static void bioFigure4() {
-		//method creates both figure 3 and 4, since they display different data from the same simulations
-		bioFigure3();
-	}
 	
 	
 	public static void bioFigure5() {
-		int numGens = 80;
+		int numGens = 200;
 		//plots outcomes as wThrive and mThrive vary, which scale birth rates up and death rates down
 		double[] defaultParameters = {0.008, 0, 0.001, 0.0025, 0.002, 0.0003, 0.005, 0.003, 0.001, 0.001, 0.0018, 0.0014, 0.01, 0.02, 15000,1,1,1};	
 		//double[] defaultParameters = Simulator.defaultParameters;
@@ -250,5 +247,129 @@ public class FigureArchive {
 
 	
 	}		
+	
+	
+	//figures for Analytic Approximations of a Vectorborne Disease Model
+	
+	public static void mathFigure1() {
+		bioFigure2();
+	}
+	
+	public static void mathFigure2() {
+		bioFigure34();
+	}
+	
+	public static void mathFigure3() {
+		bioFigure5();
+	}
+	
+	public static void mathFigure45() {
+		double[] defaultParameters = {0.008, 0, 0.001, 0.0025, 0.002, 0.0003, 0.005, 0.003, 0.001, 0.001, 0.0018, 0.0014, 0.01, 0.02, 15000,1,1,1};	
+		//double[] defaultParameters = Simulator.defaultParameters;
+		double bothThriveMin = 0;
+		double bothThriveMax = 1;
+		int numY = 800;
+		double bothThriveInc = (bothThriveMax-bothThriveMin)/numY;
+							
+		double infectivityMin = 0;
+		double infectivityMax = 2;
+		int numX = 800;
+		double infectivityInc = (infectivityMax-infectivityMin)/numX;
+		double[] parameters = defaultParameters;
+
+					
+		double[][][] simpleFormulaV = new double[numY][numX][3];
+		double[][][] complexFormulaV = new double[numY][numX][3];
+
+		for(int y = 0; y < numY; y++) {
+			double bothThrive = bothThriveMin+bothThriveInc*y;
+			for(int x = 0; x < numX; x++) {
+				double infectivity = infectivityMin+infectivityInc*x;
+				double[] defaultStart = {13000,0,0,1300,200,0,14000,0};
+				Simulator sim = new Simulator(defaultStart, parameters);
+								
+				ActionManager.adjustParameters(sim, "wThrive", bothThrive);
+				ActionManager.adjustParameters(sim, "mThrive", bothThrive);
+				ActionManager.adjustParameters(sim, "infectivity", infectivity);
+										
+				
+				ActionManager.manageFormulaV(complexFormulaV, y, x, sim); //predicts the red/blue values based on formula
+				ActionManager.simplifiedFormulaV(simpleFormulaV, y, x, sim);
+																
+			
+			}
+		}	
+
+		VarySquare simpleSquare = new VarySquare(simpleFormulaV, "Figure 5: Predictions from simple algorithm");
+		VarySquare complexSquare = new VarySquare(complexFormulaV, "Figure 6: Predictions from complex algorithm");
+
+	}
+	
+	
+	public static void mathFigure6() {
+		int numGens = 400;
+		//plots outcomes as vector density and number of initial mutants scales, to investigate phase transition
+		double[] defaultParameters = {0.008, 0, 0.001, 0.0025, 0.002, 0.0003, 0.005, 0.003, 0.001, 0.001, 0.0018, 0.0014, 0.01, 0.02, 15000,1,1,1};	
+
+		defaultParameters[0] = defaultParameters[0]/2; //cut wildTransmissionRate in half to make Rw < 1
+											
+		double mInfectivityMin = 0;
+		double mInfectivityMax = 2;
+		int numY = 100;
+		double mInfectivityInc = (mInfectivityMax-mInfectivityMin)/numY;
+				
+		double mutantInitialMin = 0;
+		double mutantInitialMax = 14000;
+		int numX = 100;
+		double mutantInitialInc = (mutantInitialMax-mutantInitialMin)/numX;
+									
+							
+		double[][][] v = new double[numY][numX][3];
+		double[][][] formulaV = new double[numY][numX][3];
+		double[][] vInf = new double[numY][numX];
+		double[][] vInfVec = new double[numY][numX];
+		for(int y = 0; y < numY; y++) {
+			double mInfectivity = mInfectivityMin+mInfectivityInc*y;
+			for(int x = 0; x < numX; x++) {
+				double mutantInitial = mutantInitialMin+mutantInitialInc*x;
+				double w0 = 1 - ((double)mutantInitial)/15000;
+						
+				double[] parameters = defaultParameters;
+				Simulator sim = new Simulator(Simulator.defaultStart, parameters);
+						
+				sim.mutantInfected = 200;
+						
+				sim.mutantTransmissionRate *= 3;
+						
+				ActionManager.adjustParameters(sim, "infectivity", mInfectivity);
+						
+						
+				sim.mutantSusceptible = mutantInitial - 200;
+				if(sim.mutantSusceptible < 0) sim.mutantSusceptible = 0;
+				sim.wildSusceptible = 14500 - mutantInitial;
+										
+				for(int i = 0; i < 365*numGens; i++) sim.simDay();
+						
+										
+				v[y][x][0] = sim.getTotalMutant(); //Red
+				v[y][x][2] = sim.getTotalWild(); //Blue
+				v[y][x][1] = sim.getTotalInfected(); //Green
+										
+				ActionManager.manageFormulaV(formulaV, y, x, sim, w0); //predicts the red/blue values based on complex algorithm
+
+						
+
+										
+				vInf[y][x] = 3*sim.getTotalInfected()*sim.carryingCapacity/sim.getTotalPop(); //normalized infected
+				vInfVec[y][x] = 3*sim.vectorInfected;
+
+
+						
+			}
+		}	
+		VarySquare square = new VarySquare(v, "mInfectivity (y) vs mInitial (x)");
+		VarySquare formulaSquare = new VarySquare(formulaV, "mInfectivity (y) vs mInitial (x) as predicted by formula");
+	}		
+	
 	
 }

@@ -14,7 +14,7 @@ Two papers are currently in progress using this model
 
 
 Comments are sparse, which I know is a bad habit but was easier in the moment.
-The MainGUI class run the main method and sets things up.
+The MainGUI class runs the main method and sets things up, and the display window.
 The Simulator class runs the actual SIR model, remembering the population states, the dynamics
 and simulates the daily and yearly updates.
 The ActionManager class contains static methods, each of which enacts a specific scenario of events.
@@ -25,8 +25,11 @@ Almost all of the variables and methods are hard-coded, rather than having input
 The set of events I want to occur are written step-by-step into an ActionManager method, then that method is
 stuck into the ActionButton in MainGUI, and the old methods are commented out, so when the program is executed
 pressing the Action Button will do the useful thing.  If you wish to run things yourself, find the relevant section
-(search for "actionpaction"), set the corresponding boolean variable to TRUE and all others to FALSE
-and then run the program and press the action button
+(search for "actionpaction"), set the corresponding boolean variable to TRUE and all others to FALSE,
+and then run the program and press the action button.  Specific methods may need to be commented/uncommented
+
+Figures used in the papers can be reproduced with the exact parameters used for those figures in the FigureArchive
+class.  These can be run by selecting them using the above Action Button
 
 
 
@@ -187,8 +190,18 @@ public static void main(String[] args){  //main
 				//ActionManager.simpleVectorSIR();
 			}
 			if(figureArchive) {
-				FigureArchive.bioFigure5();
+				//FigureArchive.bioFigure1();
+				//FigureArchive.bioFigure2();
+				//FigureArchive.bioFigure34();
 				//FigureArchive.bioFigure5();
+				//FigureArchive.mathFigure1();
+				//FigureArchive.mathFigure2();
+				//FigureArchive.mathFigure3();
+				//FigureArchive.mathFigure45();
+				FigureArchive.mathFigure6();
+				
+				
+
 			}
 			
 			  
